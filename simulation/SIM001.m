@@ -3,9 +3,11 @@ clear all
 close all
 clc
 
+sinc = @(x) sin(pi*x+1E-8)./(pi*x + 1E-8);
+
 Fs = 8000;                      %Sample Frequency [Hz]
 v = 330;                        %Speed of sound [m/s]
-azimutAngle = pi;               %Azimut angle [rad]
+azimutAngle = 0.1;               %Azimut angle [rad]
 d = 0.04;                       %Distance between microphones [m]
 maxFreq = 4000;                 %Highest allowed Freqency [Hz]
 
