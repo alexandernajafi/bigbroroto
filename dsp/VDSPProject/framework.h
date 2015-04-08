@@ -23,5 +23,6 @@ sample_t *dsp_get_audio(void);
 unsigned int dsp_get_keys(void);
 unsigned int dsp_get_cycles(void);
 void dsp_set_leds(unsigned int value);
+void spi_init_slave(void);
 
 #endif
