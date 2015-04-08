@@ -6,10 +6,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "dsp_setup.h"
 #include "framework.h"
+
+void spi_send(){
+	
+}
 
 void main()
 {   
-	spi_init();
+	dsp_init();
+	dsp_start();
+	spi_init_slave();
 }

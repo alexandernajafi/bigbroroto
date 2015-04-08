@@ -18,6 +18,7 @@
 #include <sysreg.h>
 #include <signal.h>
 #include <sru.h>
+#include <stdio.h>
 
 #include "framework.h"
 
@@ -594,6 +595,15 @@ void dsp_set_leds(unsigned int value)
     } else {
         sysreg_bit_clr(sysreg_FLAGS, FLG7);
     }
+}
+
+void spi_init_slave(){
+	int wl = 128; // WP = 01
+	int timod = 2; // TIMOD = 10
+	
+	int slave_setup = SPIEN | CLKPL | CPHASE | MSBF | ISSEN | wl | timod;
+	memreg_write(SPICTL, slave_setup);
+	printf("Spi init");
 }
 
 #pragma diag(pop)
