@@ -18,7 +18,7 @@ def run_server():
         'engine.autoreload_on': True,
         'log.screen': True,
         'server.socket_port': 5000,
-        'server.socket_host': 'localhost'
+        'server.socket_host': '192.168.10.102'
     })
     cherrypy.engine.start()
     cherrypy.engine.block()

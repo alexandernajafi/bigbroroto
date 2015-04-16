@@ -4,8 +4,11 @@ import time
 
 def main():
 	spi = Spi()
-	cam = Camera("192.168.0.167", "root", "bigbroroto")
+	cam = Camera("192.168.10.101", "root", "bigbroroto")
 	oldAngle = 0
+	cam.rotateTo(0)
+	cam.tiltTo(0)
+	print "Will start listen for angles from dsp" 
 	while True:
 		newAngle = spi.read(250, plane=True)
 		if newAngle == 0:
