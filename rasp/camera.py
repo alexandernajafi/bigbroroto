@@ -17,6 +17,7 @@ class Camera:
 	vapix_pan_command = "com/ptz.cgi?rpan=%d&camera=%d"
 	vapix_pan_to_command = "com/ptz.cgi?pan=%d&camera=%d"
 	vapix_tilt_to_command = "com/ptz.cgi?tilt=%d&camera=%d"
+	vapix_set_speed_command = "com/ptz.cgi?speed=%d&camera=%d"
 	vapix_cam_info = "/com/ptz.cgi?info=1&camera=%d"
 
 	def __init__(self, camera_adr, username, password):
@@ -37,15 +38,15 @@ class Camera:
 	'''
 	def rotate(self, angle, camera):
 		url = (self.base_url + "/" + self.vapix_pan_command) % (angle, camera)
-		print self.get_request(url)
+		return self.get_request(url)
 
 	def rotateTo(self, angle, camera):
 		url = (self.base_url + "/" + self.vapix_pan_to_command) % (angle, camera)
-		print self.get_request(url)
+		return self.get_request(url)
 
 	def tiltTo(self, angle, camera):
 		url = (self.base_url + "/" + self.vapix_tilt_to_command) % (angle, camera)
-		print self.get_request(url)
+		return self.get_request(url)
 
 	def getCameraInfo(self, camera):
 		url = self.base_url+self.vapix_cam_info % camera
@@ -55,5 +56,5 @@ if __name__ == "__main__":
 	cam = Camera("192.168.0.90", "root", "bigbroroto")
 	#cam.rotate(500, 1)
 	#print cam.getCameraInfo(1);
-	cam.tiltTo(-180, 1)
-	cam.rotateTo(180, 1)
+	cam.tiltTo(0, 1)
+	cam.rotateTo(0, 1)
