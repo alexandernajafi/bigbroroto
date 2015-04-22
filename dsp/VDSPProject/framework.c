@@ -599,11 +599,91 @@ void dsp_set_leds(unsigned int value)
 
 void spi_init_slave(){
 	int wl = 128; // WP = 01
-	int timod = 2; // TIMOD = 10
+	int timod = 1; // TIMOD = 10
 	
-	int slave_setup = SPIEN | CLKPL | CPHASE | MSBF | ISSEN | wl | timod;
-	memreg_write(SPICTL, slave_setup);
-	printf("Spi init");
+	//int slave_setup = SPIEN | ISSEN | MSBF | SENDZ | SGN ;
+	int slave_setup = WL8 | SPIMS | MSBF | SPIEN | TIMOD2;
+	memreg_write(pSPICTL, slave_setup);
+	memreg_write(pSPIBAUD, 0x64);
+	printf("Spi init\n");
 }
 
+void wait(int time){
+	int n;
+	int b = 100;
+	for(n = 0; n < time*1000; n++){
+		b = b * n;
+	}
+}
+
+/* SPI Control Registers                                  */
+#define SPICTLd  (0x1000)
+#define SPIFLGd  (0x1001)
+#define SPIBAUDd (0x1005)
+#define TXSPId   (0x1003)
+
+/*SPICTL bits                                             */
+#define TIMOD1d  (0x0001)  /* Use DMA for transfers        */
+#define TIMOD2d  (0x0002)  /* Use DMA for transfers        */
+#define DMISOd   (0x0020)  /* Disable MISO pin             */
+#define WL32d    (0x0100)  /* SPI Word Length = 32         */
+#define SPIMSd   (0x1000)  /* SPI Master if 1, Slave if 0  */
+#define SPIENd   (0x4000)  /* SPI Port Enable              */
+
+/*SPIFLG bits                                             */
+#define DS0ENd   (0x0001)  /* use FLG0 as SPI device-select*/
+
+
+void test(){
+int i;
+
+/* Init SPI MASTER TX */
+*(volatile int *)SPICTLd = 0;
+*(volatile int *)SPIFLGd = 0;
+
+/* set the SPI baud rate to CCLK/4*64 (781.25KHz @ 200MHz)*/
+     *(volatile int *)SPIBAUDd = 0x64;
+
+/* Set up DAG registers */
+*(volatile int *) SPICTLd = /*DMISOd|*/ /* Disable MISO on transfers */
+         /*WL32d|*/   /* 32-bit words */
+         /*SPIMSd|*/  /* Master mode (internal SPICLK) */
+         SPIENd|  /* Enable SPI port */
+         /*SENDZ|*/
+         TXFLSH|
+         RXFLSH|
+         /*PACKEN|*/
+         MSBF|
+         ISSEN|
+         TIMOD2d; /* Initialize SPI port to begin
+                    transmitting when DMA is enabled */
+/*printf("Will wait");
+int g;
+for(g = 0; g < 100000000; g++){
+	g = g +100;
+	g = g - 100;
+}*/
+
+/* Set up loop to transmit data */
+//for(i=0; i<sizeof(tx_buf); i++)
+    //*(volatile int *)TXSPId=tx_buf[i];
+int n;
+//for(n = 0; n < 5; n++)
+	*(volatile int *)TXSPId=55;
+printf("Send all data");
+}
+
+void spi_read(){
+	int old = *pRXSPI;
+	while(1){
+		int data = *pRXSPI;
+		if(data != old){
+			int num = data & 255;
+			printf("%d\t:%d\n", data, num);
+			old = data;
+			//*(volatile int *)pRXSPI = 0;			
+		}
+	}		
+}
+		
 #pragma diag(pop)
