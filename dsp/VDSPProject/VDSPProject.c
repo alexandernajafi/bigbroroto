@@ -8,13 +8,14 @@
 
 #include "framework.h"
 
-void spi_send(){
-	
-}
 
 void main()
 {   
 	dsp_init();
 	dsp_start();
-	spi_init_slave();
+	/*spi_init_slave();
+	spi_send();
+	//spi_read();*/
+	test();
+	spi_read();
 }

@@ -6,13 +6,13 @@ clc
 sinc = @(x) sin(pi*x+1E-8)./(pi*x + 1E-8);
 [z,Fs] = wavread('sound');
 
-sound(z,Fs);
+sound(z,Fs); %%ffftw-bibliotek
 buffersize = 1024;
 y = buffer(z,buffersize);
 
 %Fs = 8000;                      %Sample Frequency [Hz]
 v = 330;                        %Speed of sound [m/s]
-phi = 2.54;                      %XY-plane angle [rad]
+phi = 3.74;                      %XY-plane angle [rad]
 d = 0.04;                       %Distance between microphones [m]
 numberOfPackages = 10;
 
@@ -56,10 +56,10 @@ for i = 1:numberOfPackages:limit
             
         end
         x = y(:,i+n);
-        x1 = filter(h1,1,(x));%+randn([buffersize,1])/1000));            %Apply signal to microphones
-        x2 = filter(h2,1,(x));%+randn([buffersize,1])/1000)); 
-        x3 = filter(h3,1,(x));%+randn([buffersize,1])/1000)); 
-        x4 = filter(h4,1,(x));%+randn([buffersize,1])/1000)); 
+        x1 = filter(h1,1,(x));            %Apply signal to microphones
+        x2 = filter(h2,1,(x)); 
+        x3 = filter(h3,1,(x));
+        x4 = filter(h4,1,(x));
 
         X1 = fft(x1);                   %Fouriertransform of microphones
         X2 = fft(x2);
@@ -104,9 +104,12 @@ for i = 1:numberOfPackages:limit
         end
     end
     
-    
+    maxAnglePhi
     results = [results maxAnglePhi];
 end
 
 plot(results,'o')
+hold on
+xc = linspace(0,length(results));
+plot([0, length(results)],[phi phi])
 
