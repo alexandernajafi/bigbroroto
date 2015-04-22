@@ -12,6 +12,9 @@ app.debug = True
 def hello():
     return "Hello World!"
 
+@app.route("/test")
+def hello():
+    return "Test"
 
 def run_server():
     app_logged = TransLogger(app)
