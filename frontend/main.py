@@ -1,20 +1,15 @@
 #!/usr/bin/env python
 
-from flask import Flask
+from flask import Flask, render_template
 import cherrypy
 from paste.translogger import TransLogger
 
 app = Flask(__name__)
 app.debug = True
 
-
 @app.route("/")
 def hello():
-    return "Hello World!"
-
-@app.route("/test")
-def hello():
-    return "Test"
+    return render_template("layout.html")
 
 def run_server():
     app_logged = TransLogger(app)
