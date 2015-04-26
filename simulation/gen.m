@@ -4,6 +4,7 @@ clf
 clear all
 close all
 
+sinc = @(x) sin(pi*x+1E-8)./(pi*x + 1E-8);
 [z,Fs] = wavread('sound');
 x = z(1:1024);
 v = 330;                        %Speed of sound [m/s]
