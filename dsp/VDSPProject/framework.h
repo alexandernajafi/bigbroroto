@@ -28,4 +28,5 @@ void spi_send(void);
 void spi_read(void);
 void wait(int time);
 void test(void);
+void send_wait(void);
 #endif
