@@ -12,15 +12,16 @@
 
 void main()
 {
-	//dsp_init();
-	//dsp_start();
+	dsp_init();
+	dsp_start();
+	test();
 	algorithm();
 }
 
 
 void algorithm()
 {
-  int N = 1024;
+  int N = 512;
   int halfN = N/2;
   //float x1[N], x2[N], x3[N], x4[N];
   float v = 300.0;            //speed of sound
@@ -32,7 +33,7 @@ void algorithm()
   float w[N];
   int i;
   for(i = 0; i < N; i++) {w[i] = (i * 2 * pi)/N;} 
-  int resolution = 100;
+  int resolution = 360;
   float angles[resolution];
   for(i = 0; i < resolution; i++){angles[i] = i * (2*pi)/resolution;}
   int lenTmpVec = N/2 - 10;
@@ -4168,13 +4169,13 @@ void algorithm()
   printf("Doing FFT.\n");
   
   printf("X1\n");
-  rfft1024(x1, X1);
+  rfft512(x1, X1);
   printf("X2\n");
-  rfft1024(x2, X2);
+  rfft512(x2, X2);
   printf("X3\n");
-  rfft1024(x3, X3);
+  rfft512(x3, X3);
   printf("X4\n");
-  rfft1024(x4, X4);
+  rfft512(x4, X4);
   
   printf("FFT finnished.\n");
   
@@ -4212,7 +4213,7 @@ void algorithm()
   	float tmpAngle = angles[j];
   	sumTot.re = 0;
   	sumTot.im = 0;
-  	printf("Int j = %d  tmpAngle = %f\n", j, tmpAngle);
+  	//printf("Int j = %d  tmpAngle = %f\n", j, tmpAngle);
   	for(i = 9; i <lenTmpVec; i++)
   	{
   		exponentCos.im = -1 * cosf(tmpAngle) * w[i] * conversionConstant;
@@ -4229,6 +4230,10 @@ void algorithm()
   		maxAngle = tmpAngle;
   	}
   }
+  
+	float trans  = 255/360.0*180/pi*maxAngle;
+	printf("%f\n",trans);
+	spi_send((int) trans);
   
   printf("MaxAngle = %f\n", maxAngle);
   
