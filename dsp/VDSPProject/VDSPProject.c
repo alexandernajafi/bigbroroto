@@ -6,17 +6,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <filter.h>
 #include <complex.h>
 
 #include "framework.h"
 
-//#define N 1024
-
-float sum(float in[], int length);
-//float linspace(float a, float b, int steps);
-
 void main()
+{
+	//dsp_init();
+	//dsp_start();
+	algorithm();
+}
+
+
+void algorithm()
 {
   int N = 1024;
   int halfN = N/2;
@@ -4245,9 +4247,12 @@ void main()
 	
 	//dsp_init();
 	//dsp_start();
+   
 	/*spi_init_slave();
 	spi_send();
 	//spi_read();*/
 	//test();
 	//spi_read();
+	//send_wait();
+
 
