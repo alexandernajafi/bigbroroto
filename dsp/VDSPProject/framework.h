@@ -30,5 +30,7 @@ void wait(int time);
 void test(void);
 void send_wait(void);
 void algorithm(void);
+void algorithm_setup(void);
+void algorithm_close(void);
 void spi_send(int);
 #endif

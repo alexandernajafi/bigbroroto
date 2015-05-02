@@ -10,56 +10,127 @@
 
 #include "framework.h"
 
+//GLOBAL VARIABLES
+	int N = 256;					//Number of samples in each buffer
+	int lenTmpVec;					//Length of vectors used in SRP-algorithm
+  	int halfN;						//Half the length of the buffers used
+  	float v = 330.0;            	//Speed of sound
+  	float d = 0.04;             	//distance between microphones
+  	int Fs = 16000;             	//Sample frequency
+  	float conversionConstant;		//Constant used in SRP-algorithm
+  	float pi = 3.14159265;				
+	int resolution = 180;			//Resulution in SRP-algorithm. The higher value the higher resolution.
+  	int nbrOfPackages = 1;			//Number of packages (buffers) to collect before the SRP algorithm starts.
+  	int packageCounter = 0;			//How many packages has been collected so far, reseted when the SRP algorithm calculates an angle
+	complex_float * GA;				
+	complex_float * GB;
+	complex_float * GC;
+	complex_float * GD;
+	complex_float * GAmean;			//Pointers to the arrays containing cross spectrum, mean value of cross spectrum and FFT of the samples signal.
+	complex_float * GBmean;
+	complex_float * GCmean;
+	complex_float * GDmean;
+	complex_float * X1;
+	complex_float * X2;
+	complex_float * X3;
+	complex_float * X4;
+	float * w ;						//Pointer to the normaized angular freqency
+	float * angles;					//Pointer to the angles to be tested in SRP algorithm.
+	
 void main()
 {
-	dsp_init();
-	dsp_start();
-	test();
+	//dsp_init();
+	//dsp_start();
+	//test();
+	algorithm_setup();
 	algorithm();
+	algorithm_close();
 }
 
+void algorithm_close()
+{
+	/*
+		Dealocates all memory used by the pointers.
+	*/
+	
+	
+  free(X1);
+  free(X2);
+  free(X3);
+  free(X4);
+  
+  free(GA);
+  free(GB);
+  free(GC);
+  free(GD);
+  
+  free(GAmean);
+  free(GBmean);
+  free(GCmean);
+  free(GDmean);
+  
+  free(w);
+  free(angles);
+}
+
+void algorithm_setup()
+{
+
+  //Memory allocation
+  
+  GA = malloc(sizeof(complex_float)*halfN);
+  GB = malloc(sizeof(complex_float)*halfN);
+  GC = malloc(sizeof(complex_float)*halfN);
+  GD = malloc(sizeof(complex_float)*halfN);
+  
+  GAmean = malloc(sizeof(complex_float)*halfN);
+  GBmean = malloc(sizeof(complex_float)*halfN);
+  GCmean = malloc(sizeof(complex_float)*halfN);
+  GDmean = malloc(sizeof(complex_float)*halfN);
+  
+  X1 = malloc(sizeof(complex_float)*halfN);
+  X2 = malloc(sizeof(complex_float)*halfN);
+  X3 = malloc(sizeof(complex_float)*halfN);
+  X4 = malloc(sizeof(complex_float)*halfN);
+	
+  w = malloc(sizeof(float)*N);
+  angles = malloc(sizeof(float)*resolution);
+  
+  printf("Memory allocation finnished \n");
+  
+  //Initialize global variables
+  halfN = N/2;
+  conversionConstant  = Fs * d / v;
+  int i;
+  for(i = 0; i < N; i++) {w[i] = (i * 2 * pi)/N;} 
+  for(i = 0; i < resolution; i++){angles[i] = i * (2*pi)/resolution;}
+  lenTmpVec = N/2 - 10;
+  printf("Initialization of global variables finished \n");
+  
+}
 
 void algorithm()
 {
-  int N = 512;
-  int halfN = N/2;
-  //float x1[N], x2[N], x3[N], x4[N];
-  float v = 300.0;            //speed of sound
-  float d = 0.04;             //distance between microphones
-  int numberOfBuffers = 10;    //
-  int Fs = 16000;              //Sample frequency
-  float conversionConstant = Fs * d / v;
-  float pi = 3.1415;
-  float w[N];
   int i;
-  for(i = 0; i < N; i++) {w[i] = (i * 2 * pi)/N;} 
-  int resolution = 360;
-  float angles[resolution];
-  for(i = 0; i < resolution; i++){angles[i] = i * (2*pi)/resolution;}
-  int lenTmpVec = N/2 - 10;
-
-  FILE *fp1;
-  FILE *fp2;
-  FILE *fp3;
-  FILE *fp4;
-
-  /*fp1 = fopen("mic1.txt","r");
-  fp2 = fopen("mic2.txt","r");
-  fp3 = fopen("mic3.txt","r");
-  fp4 = fopen("mic4.txt","r");
   
-  printf("Reading file.\n");
+  //Reset mean values of Cross spectrum functions - This piece of code might be unnessecary. The old mean value is multiplied by zero when the new mean value is calculated. 
   
-  for(i = 0; i< N; i++)
-    {
-      fscanf(fp1, "%f",&x1[i]);
-      fscanf(fp2, "%f",&x2[i]);
-      fscanf(fp3, "%f",&x3[i]);
-      fscanf(fp4, "%f",&x4[i]);
-      //printf("%10.10f\n", x2[i]);
-    }
-     
-  */
+  if (packageCounter == 0) 
+  {
+  	for(i = 0; i < halfN; i++)
+  	{
+	  	GAmean[i].re = 0;
+	  	GAmean[i].im = 0;
+	  	GBmean[i].re = 0;
+	  	GBmean[i].im = 0;
+	  	GCmean[i].re = 0;
+	  	GCmean[i].im = 0;
+	  	GDmean[i].re = 0;
+	  	GDmean[i].im = 0;	
+  	}
+  	printf("Mean values has been set to zero \n");
+  }
+
   float x1[] = {0.0000000000,
 0.0000000000,
 0.0000000000,
@@ -4159,30 +4230,71 @@ void algorithm()
 -0.0010882671,
 -0.0004212453,
 0.0007425915};
+
+printf("Data has been loaded \n");
   	
   //complex_float X1[halfN], X2[halfN], X3[halfN], X4[halfN];
-  complex_float * X1 = malloc(sizeof(complex_float)*halfN);
-  complex_float * X2 = malloc(sizeof(complex_float)*halfN);
-  complex_float * X3 = malloc(sizeof(complex_float)*halfN);
-  complex_float * X4 = malloc(sizeof(complex_float)*halfN);
   
   printf("Doing FFT.\n");
   
-  printf("X1\n");
-  rfft512(x1, X1);
-  printf("X2\n");
-  rfft512(x2, X2);
-  printf("X3\n");
-  rfft512(x3, X3);
-  printf("X4\n");
-  rfft512(x4, X4);
-  
+  switch(N)
+  {
+  	case 64:
+  		printf("Calculation 64 point FFT \n");
+  		rfft64(x1, X1);
+  		rfft64(x2, X2);
+  		rfft64(x3, X3);
+  		rfft64(x4, X4);
+  		break;
+  	
+  	case 128:
+  		printf("Calculation 128 point FFT \n");
+  		rfft128(x1, X1);
+  		rfft128(x2, X2);
+  		rfft128(x3, X3);
+  		rfft128(x4, X4);
+  		break;
+  	
+  	case 256:
+  		printf("Calculation 256 point FFT \n");
+  		rfft256(x1, X1);
+  		rfft256(x2, X2);
+  		rfft256(x3, X3);
+  		rfft256(x4, X4);
+  		break;
+  	
+  	case 512:
+  		printf("Calculation 512 point FFT \n");
+  		rfft512(x1, X1);
+  		rfft512(x2, X2);
+  		rfft512(x3, X3);
+  		rfft512(x4, X4);
+  		break;
+  		
+  	case 1024:
+  		printf("Calculation 1024 point FFT \n");
+  		rfft1024(x1, X1);
+  		rfft1024(x2, X2);
+  		rfft1024(x3, X3);
+  		rfft1024(x4, X4);
+  		break;
+  		
+  	case 2048:
+  		printf("Calculation 2048 point FFT \n");
+  		rfft2048(x1, X1);
+  		rfft2048(x2, X2);
+  		rfft2048(x3, X3);
+  		rfft2048(x4, X4);	
+  		break;
+  		
+  	default:
+  		printf("Invalid length of Fast Fourier Transform. Should be 64, 128, 256, 512, 1024 or 2048. \n");
+		return;
+  		
+  }
   printf("FFT finnished.\n");
   
-  complex_float * GA = malloc(sizeof(complex_float)*halfN);
-  complex_float * GB = malloc(sizeof(complex_float)*halfN);
-  complex_float * GC = malloc(sizeof(complex_float)*halfN);
-  complex_float * GD = malloc(sizeof(complex_float)*halfN);
+  
   
   printf("Calculating G.\n");
   
@@ -4199,55 +4311,70 @@ void algorithm()
   }
   //printf("%d\n",n);
   
+  //Convering packageCounter to complex_float
+  complex_float multiplier;
+  multiplier.im = 0;
+  multiplier.re = packageCounter;
   
-  complex_float exponentCos;
-  complex_float exponentSin;
-  complex_float sumTot;
-
-  printf("Calculating steered response power.\n");
-  int j;
-  float maxAngle = 0;
-  float maxVal = 0;
-  for(j = 0; j<resolution; j++)
+  //Updating mean values for cross spectrum
+  
+  for(i = 0; i < halfN; i++)
   {
-  	float tmpAngle = angles[j];
-  	sumTot.re = 0;
-  	sumTot.im = 0;
-  	//printf("Int j = %d  tmpAngle = %f\n", j, tmpAngle);
-  	for(i = 9; i <lenTmpVec; i++)
-  	{
-  		exponentCos.im = -1 * cosf(tmpAngle) * w[i] * conversionConstant;
-  		exponentSin.im = -1 * sinf(tmpAngle) * w[i] * conversionConstant;
-  		sumTot = caddf(sumTot, cmltf(GA[i], cexpf(exponentCos)));
-  		sumTot = caddf(sumTot, cmltf(GB[i], cexpf(exponentSin)));
-  		sumTot = caddf(sumTot, cmltf(GC[i], cexpf(exponentCos)));
-  		sumTot = caddf(sumTot, cmltf(GD[i], cexpf(exponentSin)));
-  	}
-  	
-  	if(sumTot.re > maxVal)
-  	{
-  		maxVal = sumTot.re;
-  		maxAngle = tmpAngle;
-  	}
+	  GAmean[i] = caddf(GA[i], cmltf(GAmean[i],multiplier));
+	  GBmean[i] = caddf(GB[i], cmltf(GBmean[i],multiplier));
+	  GCmean[i] = caddf(GC[i], cmltf(GCmean[i],multiplier));
+	  GDmean[i] = caddf(GD[i], cmltf(GDmean[i],multiplier));
   }
   
+ 
+  
+  //When enough data is gathered calculate the angle
+  
+  if(packageCounter == nbrOfPackages -1)
+  {
+    
+	complex_float exponentCos;
+	exponentCos.re = 0;
+	complex_float exponentSin;
+	exponentSin.re = 0;
+	complex_float sumTot;
+
+  	printf("Calculating steered response power.\n");
+  	int j;
+  	float maxAngle = 0;
+  	float maxVal = 0;
+  	float tmpAngle;
+  	for(j = 0; j<resolution; j++)
+  	{
+  		tmpAngle = angles[j];
+  		sumTot.re = 0;
+  		sumTot.im = 0;
+	  	printf("Int j = %d  tmpAngle = %f\n", j, tmpAngle);
+	  	for(i = 9; i <lenTmpVec; i++)
+	  	{
+	  		exponentCos.im = -1 * cosf(tmpAngle) * w[i] * conversionConstant;
+	  		exponentSin.im = -1 * sinf(tmpAngle) * w[i] * conversionConstant;
+	  		sumTot = caddf(sumTot, cmltf(GAmean[i], cexpf(exponentCos)));
+	  		sumTot = caddf(sumTot, cmltf(GBmean[i], cexpf(exponentSin)));
+	  		sumTot = caddf(sumTot, cmltf(GCmean[i], cexpf(exponentCos)));
+	  		sumTot = caddf(sumTot, cmltf(GDmean[i], cexpf(exponentSin)));
+	  	}
+  	
+	  	if(sumTot.re > maxVal)
+	  	{
+	  		maxVal = sumTot.re;
+	  		maxAngle = tmpAngle;
+	  	}
+  	}
+  
 	float trans  = 255/360.0*180/pi*maxAngle;
-	printf("%f\n",trans);
 	spi_send((int) trans);
+  	printf("MaxAngle = %f\n", maxAngle);
+  	packageCounter = 0;
   
-  printf("MaxAngle = %f\n", maxAngle);
+  }
   
-  free(X1);
-  free(X2);
-  free(X3);
-  free(X4);
-  
-  free(GA);
-  free(GB);
-  free(GC);
-  free(GD);
-  
-  
+   packageCounter++;
 }
 	
 	//dsp_init();
