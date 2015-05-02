@@ -1,13 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fftw3.h>
+#include <math.h>
+
+float sum(float in[], int length);
+float linspace(float a, float b, int steps);
+
 int main(int argc, char *argv[])
 {
-  double v = 300.0;            //speed of sound
-  double d = 0.04;             //distance between microphones
+  int bufferSize = 1024;
+  float x1[bufferSize], x2[bufferSize], x3[bufferSize], x4[bufferSize];
+  float v = 300.0;            //speed of sound
+  float d = 0.04;             //distance between microphones
   int numberOfBuffers = 10;    //
   int Fs = 16000;              //Sample frequency
-  int bufferSize = 1024;
+  float pi = 3.1415;
+  float w[bufferSize];
+  int i;
+  for(i = 0; i < bufferSize; i++) {w[i] = (i * 2 * pi)/bufferSize;} 
+
+  int resolution = 1000;
+  float angles[resolution];
+  for(i = 0; i < resolution; i++){angles[i] = i * (2*pi)/resolution;}
 
   FILE *fp1;
   FILE *fp2;
@@ -19,18 +33,30 @@ int main(int argc, char *argv[])
   fp3 = fopen("mic3.txt","r");
   fp4 = fopen("mic4.txt","r");
 
-  double inputMic1[bufferSize];
-  double inputMic2[bufferSize];
-  double inputMic3[bufferSize];
-  double inputMic4[bufferSize];
-
-  int i;
   for(i = 0; i< bufferSize; i++)
     {
-        fscanf(fp1, "%lf\n", &inputMic1[i]);
-        fscanf(fp2, "%lf\n", &inputMic2[i]);
-        fscanf(fp3, "%lf\n", &inputMic3[i]);
-        fscanf(fp4, "%lf\n", &inputMic4[i]);
+      fscanf(fp1, "%f",&x1[i]);
+      fscanf(fp2, "%f",&x2[i]);
+      fscanf(fp3, "%f",&x3[i]);
+      fscanf(fp4, "%f",&x4[i]);
     }
+    
+  float GAmean, GBmean, GCmean, GDmean = 0;
+  float X1[bufferSize][2], X2[bufferSize][2], X3[bufferSize][2], X4[bufferSize][2];
+
+  printf("%f\n",sum(x1,1024)); 
 
 }
+
+float sum(float in[], int length)
+{
+  float res = 0;
+  int i;
+  for( i= 0; i < length; i++)
+    {
+      res += in[i];
+    }
+
+  return res;
+}
+

@@ -36,25 +36,27 @@ class Camera:
 	'''
 	Rotates the camera to the new direction angle. 
 	'''
-	def rotate(self, angle, camera):
+	def rotate(self, angle, camera=1):
 		url = (self.base_url + "/" + self.vapix_pan_command) % (angle, camera)
 		return self.get_request(url)
 
-	def rotateTo(self, angle, camera):
+	def rotateTo(self, angle, camera=1):
 		url = (self.base_url + "/" + self.vapix_pan_to_command) % (angle, camera)
 		return self.get_request(url)
 
-	def tiltTo(self, angle, camera):
+	def tiltTo(self, angle, camera=1):
 		url = (self.base_url + "/" + self.vapix_tilt_to_command) % (angle, camera)
+		#print url
 		return self.get_request(url)
 
-	def getCameraInfo(self, camera):
+	def getCameraInfo(self, camera=1):
 		url = self.base_url+self.vapix_cam_info % camera
 		return self.get_request(url)
 
 if __name__ == "__main__":
-	cam = Camera("192.168.0.90", "root", "bigbroroto")
+	cam = Camera("192.168.10.101", "root", "bigbroroto")
 	#cam.rotate(500, 1)
 	#print cam.getCameraInfo(1);
-	cam.tiltTo(0, 1)
-	cam.rotateTo(0, 1)
+	print cam.tiltTo(45, 1)
+	print cam.rotateTo(-180, 1)
+	print "Did some stuff with the camera" 
