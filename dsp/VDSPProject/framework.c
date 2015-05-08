@@ -616,6 +616,22 @@ void wait(int time){
 	}
 }
 
+/*void spi_send(){
+	printf("Clk speed: %d", *pSPIBAUD); 
+	int data = 64;
+	int n = 0; 
+	for(n = 0; n < 5; n++){
+		data = data + n;
+		memreg_write(pTXSPI, data);
+		printf("send data%d\n", n);
+		wait(100000);
+	} */
+//}
+
+
+
+
+
 /* SPI Control Registers                                  */
 #define SPICTLd  (0x1000)
 #define SPIFLGd  (0x1001)
@@ -667,10 +683,10 @@ for(g = 0; g < 100000000; g++){
 /* Set up loop to transmit data */
 //for(i=0; i<sizeof(tx_buf); i++)
     //*(volatile int *)TXSPId=tx_buf[i];
-int n;
+//int n;
 //for(n = 0; n < 5; n++)
-	*(volatile int *)TXSPId=55;
-printf("Send all data");
+//	*(volatile int *)TXSPId=129;
+//printf("Send all data");
 }
 
 void spi_read(){
@@ -684,6 +700,33 @@ void spi_read(){
 			//*(volatile int *)pRXSPI = 0;			
 		}
 	}		
+}
+
+void send_wait(){
+	
+	int kod = 1;
+	int innan = *pRXSPI;
+	while(1){
+		
+		*(volatile int *)TXSPId=kod;
+		printf("%d\n",kod);
+		kod = kod + 50 ;
+		if(kod > 255){
+			kod = 1;
+		}
+		
+		
+		
+		int g;
+		for(g = 0; g < 100000000; g++){	
+			g = g +100;
+			g = g - 100;
+		}
+	}	
+}
+
+void spi_send(int in){
+	*(volatile int *)TXSPId=in;
 }
 		
 #pragma diag(pop)

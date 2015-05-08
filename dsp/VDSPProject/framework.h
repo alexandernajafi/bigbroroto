@@ -24,8 +24,13 @@ unsigned int dsp_get_keys(void);
 unsigned int dsp_get_cycles(void);
 void dsp_set_leds(unsigned int value);
 void spi_init_slave(void);
-void spi_send(void);
+//void spi_send(void);
 void spi_read(void);
 void wait(int time);
 void test(void);
+void send_wait(void);
+void algorithm(void);
+void algorithm_setup(void);
+void algorithm_close(void);
+void spi_send(int);
 #endif
