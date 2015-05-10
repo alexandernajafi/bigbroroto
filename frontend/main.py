@@ -39,6 +39,7 @@ class SocketServerSSE(Thread):
 				sys.stdout.flush()
 				for connection in connections:
 					try:
+						connection.send("%04d" % len(str(data)))
 						connection.send(str(data))
 					except socket.error:
 						connections.remove(connection)

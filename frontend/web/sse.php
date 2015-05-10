@@ -12,21 +12,30 @@ header("Connection: keep-alive");
 
 error_reporting(E_ALL);
 set_time_limit(0);
-echo "HeJ";
 $socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 if($socket == false){
-	die("Could not create socket.. wtf?");
+	echo "Could not create socket.. wtf?";
 }
-
 $adr = "localhost";
 $port = 8008;
 $result = socket_connect($socket, $adr, $port);
 if($result == false){
- 	die("Could not bind socket.. wtf?");
+	echo "Could not connect to socket";
 }
 
-for($i=0; $i<5;$i++){
-	echo "data: "+socket_read($socket, 4)+"\n\n";
+#echo socket_read($socket, 4);
+#echo socket_read($socket, 13);
+#echo socket_read($socket, 1);
+#echo socket_read($socket, 1);
+#echo socket_read($socket, 1);
+
+for(;;){
+	#echo "data: ".socket_read($socket, 1)+"\n\n";
+	$length = socket_read($socket, 4);
+	$data = socket_read($socket, $length);
+	echo "data: ";
+	echo $data;
+	echo "\n\n";
 	ob_flush();
 	flush();
 	sleep(1);
