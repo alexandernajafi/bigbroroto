@@ -57,5 +57,5 @@ if __name__ == "__main__":
 	cam = Camera("192.168.10.101", "root", "bigbroroto")
 	#cam.rotate(500, 1)
 	#print cam.getCameraInfo(1);
-	print cam.rotateTo(0, 1)
+	print cam.rotateTo(110, 1)
 	print "Did some stuff with the camera" 

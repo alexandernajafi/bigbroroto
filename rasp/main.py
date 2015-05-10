@@ -16,6 +16,7 @@ def main():
 		# Compute 0-255 to 0-360
 		newAngle = int(newAngle * 1.4117647059)
 		# Calculate real angle
+		newAngle = 360-newAngle
 		if newAngle < 180:
 			camAngle = -180+newAngle
 		else: 
@@ -23,7 +24,7 @@ def main():
 		if oldAngle != camAngle:
 			cam.rotateTo(camAngle);
 			oldAngle = camAngle
-			print "Rotate to: ", camAngle
+			print "Rotate to: ", camAngle, " got from SPI: ", str(newAngle)
 		time.sleep(0.1)
 
 if __name__ == "__main__":
