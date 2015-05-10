@@ -56,11 +56,42 @@ class SocketServerSSE(Thread):
 			if len(connections) > 0 and notRunning:
 				start_new_thread(clientHandler, (conn,))
 
+class SPICameraThread(Thread):
+	def __init__(self, socketThreadI):
+		Thread.__init__(self)
+		self.socketThread = socketThreadI
+	
+	def run(self):
+		self.spi = Spi()
+		self.cam = Camera("192.168.10.101", "root", "bigbroroto")
+		sys.stdout.write("Will start listen on DSP")
+		oldAngle = 0
+		while True:
+			newAngle = self.spi.read(250, plane=True)
+			if newAngle == 0:
+				continue
+			newAngle = int(newAngle * 1.4117647059)
+			newAngle = 360-newAngle
+			if newAngle < 180:
+				camAngle = -newAngle
+			else:
+				camAngle = newAngle - 180
+
+			if oldAngle != camAngle:
+				self.cam.rotateTo(camAngle)
+				oldAngle = camAngle
+				self.socketThread.dataQueue.put("newangle: "+str(newAngle))
+				sys.stdout.write("Rotade camera to "+str(newAngle))
+				sys.stdout.flush()
+			time.sleep(0.5)
+
 class BigBroRoto(Daemon):
 	def run(self):
 		i = 0
 		th = SocketServerSSE()
 		th.start()
+		spict = SPICameraThread(th)
+		spict.start()
 		sys.stdout.write("hejsan")
 		sys.stdout.flush()
 		while True:

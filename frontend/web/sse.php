@@ -1,25 +1,36 @@
 <?php
-
-$data = $_GET["data"]; 
-
 header("Content-Type: text/event-stream");
 header("Cache-Control: no-cache");
 header("Connection: keep-alive");
 
-function sse_logging(){
-	
+/*for($i=0; $i<10; $i++){
+	echo "heJ";
+	ob_flush();
+	flush();
+	sleep(1);
+}*/
+
+error_reporting(E_ALL);
+set_time_limit(0);
+echo "HeJ";
+$socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+if($socket == false){
+	die("Could not create socket.. wtf?");
 }
 
-function sse_angle(){
-	
+$adr = "localhost";
+$port = 8008;
+$result = socket_connect($socket, $adr, $port);
+if($result == false){
+ 	die("Could not bind socket.. wtf?");
 }
 
-switch($data){
-	case "logs":
-	sse_logging();
-	break;
-	case "angle":
-	sse_angle();
-	break;
+for($i=0; $i<5;$i++){
+	echo "data: "+socket_read($socket, 4)+"\n\n";
+	ob_flush();
+	flush();
+	sleep(1);
 }
+
+socket_close($socket);
 ?>
