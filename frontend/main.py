@@ -12,6 +12,9 @@ class SocketServerSSE(Thread):
 	def __init__(self):
 		Thread.__init__(self)
 		self.dataQueue = Queue.Queue()
+	
+	def log(self, msg):
+		self.dataQueue.put("log: "+str(msg))
 
 	def run(self):
 		port = 8008
@@ -76,7 +79,7 @@ class SPICameraThread(Thread):
 			if newAngle < 180:
 				camAngle = -newAngle
 			else:
-				camAngle = newAngle - 180
+				camAngle = 360 - newAngle
 
 			if oldAngle != camAngle:
 				self.cam.rotateTo(camAngle)
@@ -93,8 +96,7 @@ class BigBroRoto(Daemon):
 		th.start()
 		spict = SPICameraThread(th)
 		spict.start()
-		sys.stdout.write("hejsan")
-		sys.stdout.flush()
+		th.log("Started daemon!")
 		while True:
 			i += 1
 			sys.stdout.write("test: "+str(i)+"\n")
