@@ -110,11 +110,16 @@ document.Player.ToolbarConfiguration = "play,+snapshot,+fullscreen"
 								<div class="col-sm-12">
 									<textarea style="width:100%; font-family: Lucida Console; font-size:8pt" rows="6" id="logbox"></textarea>
 									<script type="text/javascript">
-										var stream = new EventSource("/logsstream");
+										var stream = new EventSource("/sse.php");
 										stream.onmessage = function (e){
 											var message = e.data;
-											$("#logbox").append(message+"\n");
-											$("#logbox").scrollTop($("#logbox")[0].scrollHeight)
+											var msgparts = message.split(" ");
+											var angle = msgparts[1];
+											
+											$("#angle_box").html(angle+"&deg;");
+
+											//$("#logbox").append(message+"\n");
+											//$("#logbox").scrollTop($("#logbox")[0].scrollHeight)
 										}
 									</script>
 								</div>
@@ -123,7 +128,7 @@ document.Player.ToolbarConfiguration = "play,+snapshot,+fullscreen"
 								<div class="col-sm-6">
 									<div class="panel panel-default">
 										<div class="panel-body">
-											<h2><center id="angle_box">B</center></h2>
+											<h2><center id="angle_box">0&deg;</center></h2>
 										</div>
 									</div>
 								</div>

@@ -1,1 +1,6 @@
 Here we will place the code for the front-end webservice
+
+Usage for daemon:
+Run as root:
+
+python main.py start/restart/stop
