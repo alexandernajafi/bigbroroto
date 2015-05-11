@@ -108,7 +108,8 @@ enum i2c_codec_e {
     codec_u31 = 1<<1,
     codec_u32 = 1<<2,
     codec_u33 = 1<<3,
-    codec_all = (codec_u30 | codec_u31 | codec_u32 | codec_u33)
+    codec_all = (codec_u30 | codec_u31 | codec_u32 | codec_u33),
+    codec_used = (codec_u32 | codec_u33),
 };
 
 typedef struct {
@@ -120,13 +121,17 @@ typedef struct {
     unsigned int mask;
 } i2c_state_t;
 
-static sample_t     audio_buffers[3][DSP_BLOCK_SIZE];
-static i2c_state_t  i2c_state;
+static i2c_state_t i2c_state;
+static sample_t audio_buffers_u32[3][DSP_BLOCK_SIZE];
+static sample_t audio_buffers_u33[3][DSP_BLOCK_SIZE];
 
 static dma_table_value_t const /*pm*/ audio_dma_table[] = {
-    {DMA_CHAIN_NEXT(audio_dma_table+1), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers[0])},
-    {DMA_CHAIN_NEXT(audio_dma_table+2), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers[1])},
-    {DMA_CHAIN_NEXT(audio_dma_table+0), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers[2])},
+    {DMA_CHAIN_NEXT(audio_dma_table+1), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers_u32[0])},
+    {DMA_CHAIN_NEXT(audio_dma_table+2), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers_u32[1])},
+    {DMA_CHAIN_NEXT(audio_dma_table+0), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers_u32[2])},
+    {DMA_CHAIN_NEXT(audio_dma_table+4), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers_u33[0])},
+    {DMA_CHAIN_NEXT(audio_dma_table+5), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers_u33[1])},
+    {DMA_CHAIN_NEXT(audio_dma_table+3), CODEC_STREAM_SIZE, 1, DMA_CHAIN_BUFFER(audio_buffers_u33[2])},
 };
 
 static codec_table_value_t const /*pm*/ codec_table[] = {
@@ -138,7 +143,7 @@ static codec_table_value_t const /*pm*/ codec_table[] = {
     OUT.L      <-  X148    <-  DLSP8   <-  HPLOUT
     OUT.R      <-  X150    <-  DLSP10  <-  HPROUT
     OUT.GND    <-  X151    <-  DLSP11  <-  HPRCOM
-    
+
     Codec U33
     IN.L        -> X114     -> MIC6     -> MIC3L_LINE3L
     IN.R        -> X112     -> MIC7     -> MIC3R_LINE3R
@@ -147,36 +152,41 @@ static codec_table_value_t const /*pm*/ codec_table[] = {
     OUT.R      <-  X154    <-  DLSP14  <-  HPROUT
     OUT.GND    <-  X155    <-  DLSP15  <-  HPRCOM
     */
-    
+
     /* Reset all codecs and set register page to 0. */
     {codec_all, 1, 0x80},
     {codec_all, 0, 0x00},
-    
+
     /* Data transfer to and from codec. */
-    {codec_u32,              8, 0xC0},
-    {codec_u32,  9, 0x30},
-    {codec_u32,  7, 0x0A},
-    {codec_u32, 12, 0x50},
-    {codec_u32,  2, 0x00 | CODEC_DUAL_DIVISOR},
+    {codec_u32,   8, 0xC0},
+    {codec_used,  9, 0x30},
+    {codec_used, 12, 0x50},
+    {codec_used,  2, 0x00 | CODEC_DUAL_DIVISOR},
+
+#if defined(DSP_USE_DOUBLE_RATE)
+    {codec_used,  7, 0x0A | (1<<5 | 1<<6)},
+#else
+    {codec_used,  7, 0x0A},
+#endif
 
     /* Input signal path settings. */
-    {codec_u32, 15, 0x00 | (DSP_INPUT_GAIN << 2)},
-    {codec_u32, 16, 0x00 | (DSP_INPUT_GAIN << 2)},
-    {codec_u32, 17, 0x0F},
-    {codec_u32, 18, 0xF0},
-    {codec_u32, 19, 0x7C},
-    {codec_u32, 22, 0x7C},
-    {codec_u32, 25, 0x40},
-    
+    {codec_used, 15, 0x00 | (DSP_INPUT_GAIN << 2)},
+    {codec_used, 16, 0x00 | (DSP_INPUT_GAIN << 2)},
+    {codec_used, 17, 0x0F},
+    {codec_used, 18, 0xF0},
+    {codec_used, 19, 0x7C},
+    {codec_used, 22, 0x7C},
+    {codec_used, 25, 0x40},
+
     /* Output signal path settings. */
-    {codec_u32, 37, 0xD0},
-    {codec_u32, 38, 0x08},
-    {codec_u32, 41, 0xA0},
-    {codec_u32, 42, 0x6C},
-    {codec_u32, 43, 0x00 | (DSP_OUTPUT_ATTENUATION << 2)},
-    {codec_u32, 44, 0x00 | (DSP_OUTPUT_ATTENUATION << 2)},
-    {codec_u32, 51, 0x0F},
-    {codec_u32, 65, 0x0F},
+    {codec_used, 37, 0xD0},
+    {codec_used, 38, 0x08},
+    {codec_used, 41, 0xA0},
+    {codec_used, 42, 0x6C},
+    {codec_used, 43, 0x00 | (DSP_OUTPUT_ATTENUATION << 2)},
+    {codec_used, 44, 0x00 | (DSP_OUTPUT_ATTENUATION << 2)},
+    {codec_used, 51, 0x0F},
+    {codec_used, 65, 0x0F},
 };
 
 static void memreg_write(unsigned int volatile *reg, int val)
@@ -262,7 +272,7 @@ static void i2c_state_transition(int sig)
         i2c_sda_clr();
         i2c_state.current = state_new_byte;
         break;
-    
+
     case state_new_byte:
         i2c_scl_clr(i2c_state.codec);
         i2c_state.byte = i2c_state.message & 0xFFu;
@@ -352,7 +362,7 @@ static void i2c_state_transition(int sig)
 
     case state_idle:
         break;
-    
+
     default:
         break;
     }
@@ -361,7 +371,7 @@ static void i2c_state_transition(int sig)
 static void dai_interrupt_delegate(int sig)
 {
     unsigned int mask = *pDAI_IRPTL_H;
-    
+
     if((mask & 0xF0000000) != 0) {
         raise(SIG_USR0);
     }
@@ -370,27 +380,27 @@ static void dai_interrupt_delegate(int sig)
 void dsp_init()
 {
     typedef void (*intfn)(int);
-    
+
     int i;
     intfn tmz;
-   
+
     memreg_bit_set(pSYSCTL, IIVT | PPFLGS);
     memreg_bit_set(pPMCTL, CLKOUTEN);
-    
+
     sysreg_bit_set(sysreg_FLAGS, FLG8O | FLG9O | FLG10O | FLG11O | FLG12O | FLG14O);
     sysreg_bit_set(sysreg_FLAGS, FLG8  | FLG9  | FLG10  | FLG11  | FLG12  | FLG14);
-    
+
     sysreg_bit_set(sysreg_FLAGS, FLG2O | FLG3O | FLG4O | FLG5O | FLG6O | FLG7O | FLG0O);
     sysreg_bit_set(sysreg_FLAGS, FLG2  | FLG3  | FLG4  | FLG5  | FLG6  | FLG7  | FLG0);
-    
+
     sysreg_bit_clr(sysreg_FLAGS, FLG14);
     asm("nop; nop; nop; nop;");
     sysreg_bit_set(sysreg_FLAGS, FLG14);
-    
+
     tmz = interrupt(SIG_TMZ, i2c_state_transition);
     timer_set(1000, 1000);
     timer_on();
-    
+
     for(i=0; i<sizeof(codec_table)/sizeof(codec_table[0]); ++i) {
         unsigned int codecuxx = codec_table[i].uxx;
         unsigned int codecreg = codec_table[i].reg;
@@ -402,7 +412,7 @@ void dsp_init()
                 i2c_state.current = state_init;
                 i2c_state.message = (0x18u<<1) | (codecreg<<8) | (codecval<<16);
                 i2c_state.codec = mask;
-    
+
                 while(i2c_state.current != state_idle) {
                     idle();
                 }
@@ -410,30 +420,34 @@ void dsp_init()
             mask <<= 1;
         }
     }
-    
+
     timer_off();
     interrupt(SIG_TMZ, tmz);
-    
+
     /*
     SPORT 1A input from codec U32.
+    SPORT 1B input from codec U33.
     SPORT 0A output to codec U32.
+    SPORT 0B output to codec U33.
     */
 
-    memreg_write(pSPCTL1, OPMODE | SLEN32 | SDEN_A | SCHEN_A);
-    memreg_write(pSPCTL0, OPMODE | SLEN32 | SDEN_A | SCHEN_A | SPTRAN);
+    memreg_write(pSPCTL1, OPMODE | SLEN32 | SDEN_A | SCHEN_A | SDEN_B | SCHEN_B);
+    memreg_write(pSPCTL0, OPMODE | SLEN32 | SDEN_A | SCHEN_A | SDEN_B | SCHEN_B | SPTRAN);
 
     /*
     U32.I2S_BCLK  -> DAI_P6 (clock master)
     U32.I2S_WCLK  -> DAI_P4 (clock master)
     U32.I2S_DIN  <-  DAI_P8
     U32.I2S_DOUT  -> DAI_P7
+    U33.I2S_DIN  <-  DAI_P11
+    U33.I2S_DOUT  -> DAI_P9
 
     KEY6          -> DAI_P20
     KEY7          -> DAI_P19
     KEY8          -> DAI_P18
     KEY9          -> DAI_P17
     */
-    
+
     /*
     DAI_P6        -> SPORT0_CLK
     DAI_P4        -> SPORT0_FS
@@ -446,32 +460,39 @@ void dsp_init()
     DAI_P19       -> DAI_INT_30
     DAI_P20       -> DAI_INT_31
     */
-   
+
     /*
     Group A: Clock routing.
     PB6 to SPORT0_CLK
     PB6 to SPORT1_CLK
     */
+
     memreg_write(pSRU_CLK0, (A_DAI_PB06_O<<0) | (A_DAI_PB06_O<<5));
 
     /*
     Group B: Serial data routing.
     PB7 to SPORT1A
+    PB9 to SPORT1B
     */
-    memreg_write(pSRU_DAT0, (B_DAI_PB07_O<<12));
+
+    memreg_write(pSRU_DAT0, (B_DAI_PB07_O<<12) | (B_DAI_PB09_O<<18));
 
     /*
     Group C: Frame sync rounting.
     PB4 to SPORT0_FS
     PB4 to SPORT1_FS
     */
+
     memreg_write(pSRU_FS0, (C_DAI_PB04_O<<0) | (C_DAI_PB04_O<<5));
 
     /*
     Group D: Pin signal assignment.
     SPORT0_DA to PB8
+    SPORT0_DB to PB11
     */
+
     memreg_write(pSRU_PIN1, (D_SPORT0_DA_O<<12));
+    memreg_write(pSRU_PIN2, (D_SPORT0_DB_O<<0));
 
     /*
     Group E: Miscellaneous registers
@@ -480,25 +501,30 @@ void dsp_init()
     PB19 to DAI_INT_30
     PB20 to DAI_INT_31
     */
+
     memreg_write(pSRU_EXT_MISCA, (E_DAI_PB17_O<<0) | (E_DAI_PB18_O<<5) | (E_DAI_PB19_O<<10) | (E_DAI_PB20_O<<15));
-    
+
     /*
     Group F: Pin buffer enable.
     Set PBEN8 to output.
+    Set PBEN11 to output.
     */
+
     memreg_write(pSRU_PINEN0, 0);
     memreg_write(pSRU_PINEN1, (F_HIGH<<12));
-    memreg_write(pSRU_PINEN2, 0);
+    memreg_write(pSRU_PINEN2, (F_HIGH<<0));
     memreg_write(pSRU_PINEN3, 0);
 
     /*
     Pull-up resistors.
     */
+
     memreg_write(pDAI_PIN_PULLUP, (~(DAI_P04_PULLUP | DAI_P06_PULLUP | DAI_P07_PULLUP | DAI_P08_PULLUP)) & 0x000FFFFF);
 
     /*
     Enable DAI interrupt on DAI_INT_n on falling edge, for n=28...31.
     */
+
     memreg_write(pDAI_IRPTL_FE, SRU_EXTMISCA0_INT | SRU_EXTMISCA1_INT | SRU_EXTMISCA2_INT | SRU_EXTMISCA3_INT);
     memreg_write(pDAI_IRPTL_PRI, SRU_EXTMISCA0_INT | SRU_EXTMISCA1_INT | SRU_EXTMISCA2_INT | SRU_EXTMISCA3_INT);
 
@@ -512,22 +538,24 @@ void dsp_init()
 void dsp_start(void)
 {
     memreg_write(pCPSP1A, DMA_CHAIN_ENTRY(audio_dma_table+0));
+    memreg_write(pCPSP1B, DMA_CHAIN_ENTRY(audio_dma_table+3));
     memreg_write(pCPSP0A, DMA_CHAIN_ENTRY(audio_dma_table+1));
-    memreg_bit_set(pSPCTL1, SPEN_A);
-    memreg_bit_set(pSPCTL0, SPEN_A);
+    memreg_write(pCPSP0B, DMA_CHAIN_ENTRY(audio_dma_table+4));
+    memreg_bit_set(pSPCTL1, SPEN_A | SPEN_B);
+    memreg_bit_set(pSPCTL0, SPEN_A | SPEN_B);
 }
 
 void dsp_stop(void)
 {
-    memreg_bit_clr(pSPCTL1, SPEN_A);
-    memreg_bit_clr(pSPCTL0, SPEN_A);
+    memreg_bit_clr(pSPCTL1, SPEN_A | SPEN_B);
+    memreg_bit_clr(pSPCTL0, SPEN_A | SPEN_B);
 }
 
 static int dsp_get_audio_buffer_index(void)
 {
     unsigned int p = *pCPSP1A;
     int index;
-       
+
     if(p == DMA_CHAIN_NEXT(audio_dma_table+2)) {
         index = 0;
     } else if(p == DMA_CHAIN_NEXT(audio_dma_table+0)) {
@@ -535,14 +563,26 @@ static int dsp_get_audio_buffer_index(void)
     } else {
         index = 2;
     }
-    
+
     return index;
 }
 
 sample_t *dsp_get_audio(void)
 {
     int index = dsp_get_audio_buffer_index();
-    return audio_buffers[index];
+    return audio_buffers_u32[index];
+}
+
+sample_t *dsp_get_audio_01(void)
+{
+    int index = dsp_get_audio_buffer_index();
+    return audio_buffers_u32[index];
+}
+
+sample_t *dsp_get_audio_23(void)
+{
+    int index = dsp_get_audio_buffer_index();
+    return audio_buffers_u33[index];
 }
 
 unsigned int dsp_get_keys(void)
@@ -559,7 +599,7 @@ unsigned int dsp_get_cycles(void)
 }
 
 void dsp_set_leds(unsigned int value)
-{    
+{
     if(value & 0x01) {
         sysreg_bit_set(sysreg_FLAGS, FLG2);
     } else {
@@ -571,7 +611,7 @@ void dsp_set_leds(unsigned int value)
     } else {
         sysreg_bit_clr(sysreg_FLAGS, FLG3);
     }
-    
+
     if(value & 0x04) {
         sysreg_bit_set(sysreg_FLAGS, FLG4);
     } else {
@@ -583,13 +623,13 @@ void dsp_set_leds(unsigned int value)
     } else {
         sysreg_bit_clr(sysreg_FLAGS, FLG5);
     }
-    
+
     if(value & 0x10) {
         sysreg_bit_set(sysreg_FLAGS, FLG6);
     } else {
         sysreg_bit_clr(sysreg_FLAGS, FLG6);
     }
-    
+
     if(value & 0x20) {
         sysreg_bit_set(sysreg_FLAGS, FLG7);
     } else {
@@ -728,5 +768,5 @@ void send_wait(){
 void spi_send(int in){
 	*(volatile int *)TXSPId=in;
 }
-		
+
 #pragma diag(pop)
