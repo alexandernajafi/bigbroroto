@@ -114,10 +114,16 @@ document.Player.ToolbarConfiguration = "play,+snapshot,+fullscreen"
 										stream.onmessage = function (e){
 											var message = e.data;
 											var msgparts = message.split(" ");
-											var angle = msgparts[1];
-											
-											$("#angle_box").html(angle+"&deg;");
-
+											var type = message.substr(0, message.indexOf(' '));
+											var data = message.substr(str.indexOf(' ')+1);
+											//console.log(data);
+											if(type == "log:"){
+												$("#logbox").append(data+"\n");
+												$("#logbox").scrollTop($("#logbox")[0].scrollHeight);
+											}
+											else if(type == "newangle:"){
+												$("#angle_box").html(data+"&deg;");
+											}
 											//$("#logbox").append(message+"\n");
 											//$("#logbox").scrollTop($("#logbox")[0].scrollHeight)
 										}
