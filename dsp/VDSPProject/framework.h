@@ -2,9 +2,9 @@
 #define framework_h_included
 
 /* Configuration */
-#define DSP_SAMPLE_RATE         8000
+#define DSP_SAMPLE_RATE         16000
 #define DSP_BLOCK_SIZE          256
-#define DSP_INPUT_GAIN          20
+#define DSP_INPUT_GAIN          30
 #define DSP_OUTPUT_ATTENUATION  10
 
 /* Codec selection */

@@ -11,15 +11,16 @@
 #include "framework.h"
 
 //GLOBAL VARIABLES
-	int N = DSP_BLOCK_SIZE;					//Number of samples in each buffer
+	int N = DSP_BLOCK_SIZE;			//Number of samples in each buffer
 	int lenTmpVec;					//Length of vectors used in SRP-algorithm
   	int halfN;						//Half the length of the buffers used
-  	int Fs = 8000;             	//Sample frequency
+  	int Fs = DSP_SAMPLE_RATE;       //Sample frequency
 	int resolution = 360;			//Resulution in SRP-algorithm. The higher value the higher resolution.
-  	int nbrOfPackages = 30;			//Number of packages (buffers) to collect before the SRP algorithm starts.
+  	int nbrOfPackages = 20;			//Number of packages (buffers) to collect before the SRP algorithm starts.
   	int packageCounter = 1;			//How many packages has been collected so far, reseted when the SRP algorithm calculates an angle
    	float conversionConstant;		//Constant used in SRP-algorithm
-  	float pi = 3.14159265;				
+  	float prevAngle =0 ;
+   	float pi = 3.14159265;			
   	float v = 330.0;            	//Speed of sound
   	float d = 0.039;             	//distance between microphones
   	float * angularFreq;						//Pointer to the normaized angular freqency
@@ -44,6 +45,7 @@
 	void algorithm_setup(void);
 	void algorithm_close(void);
 	void algorithm(void);
+	void new_algorithm(void);
 
 void algorithm_close()
 {
@@ -212,10 +214,21 @@ void algorithm()
   	int n;
 	for(n = 0; n < halfN; n++)
 	{
+	  
+	/*
 	  GA[n] = cmltf(X2[n], conj(X1[n]));
 	  GB[n] = cmltf(X2[n], conj(X4[n]));
 	  GC[n] = cmltf(X4[n], conj(X3[n]));
 	  GD[n] = cmltf(X1[n], conj(X3[n]));
+	 
+	  
+	  */
+	  GA[n] = cmltf(X1[n], conj(X2[n]));
+	  GB[n] = cmltf(X2[n], conj(X4[n]));
+	  GC[n] = cmltf(X4[n], conj(X3[n]));
+	  GD[n] = cmltf(X3[n], conj(X1[n]));
+	 
+	 
 	}
 
 	for(i = 0; i < halfN; i++)
@@ -224,10 +237,6 @@ void algorithm()
 	  GBmean[i] = caddf(GB[i], GBmean[i]);
 	  GCmean[i] = caddf(GC[i], GCmean[i]);
 	  GDmean[i] = caddf(GD[i], GDmean[i]);
-	  if(GBmean[i].re != GBmean[i].re || GBmean[i].im != GBmean[i].im)
-	  {
-	  	printf(" fail : %f, %f \n", GBmean[i].im, GBmean[i].re);
-	  }
 	}
   
   /*
@@ -254,6 +263,10 @@ void algorithm()
 	complex_float exponentCos1;
 	exponentCos1.re = 0;
 	complex_float exponentSin1;
+	complex_float exponentCos2;
+	exponentCos2.re = 0;
+	complex_float exponentSin2;
+	exponentSin2.re = 0; ;
 	exponentSin1.re = 0; 
 	complex_float sumTot;
 
@@ -267,6 +280,8 @@ void algorithm()
   	complex_float dmlt;
   	complex_float inputSin1;
   	complex_float inputCos1;
+  	complex_float inputSin2;
+  	complex_float inputCos2;
   	
   	for(j = 0; j<resolution; j++)
   	{
@@ -275,43 +290,57 @@ void algorithm()
   		sumTot.im = 0;
 	  	for(i = 9; i <lenTmpVec; i++)
 	  	{
+	  		
 	  		exponentCos1.im = -1 * cosf(tmpAngle) * angularFreq[i] * conversionConstant;
 	  		exponentSin1.im = -1 * sinf(tmpAngle) * angularFreq[i] * conversionConstant;
+	  		exponentCos2.im = 1 * cosf(tmpAngle) * angularFreq[i] * conversionConstant;
+	  		exponentSin2.im = 1 * sinf(tmpAngle) * angularFreq[i] * conversionConstant;
+	  		
 	  		
 	  		inputSin1 = cexpf(exponentSin1);
-	  		inputCos1 = cexpf(exponentCos1);
+	  		inputCos1 = cexpf(exponentCos1); 
+	  		inputSin2 = cexpf(exponentSin2);
+	  		inputCos2 = cexpf(exponentCos2); 
 	  		
 	  		amlt = cmltf(GAmean[i], inputCos1);
 	  		bmlt = cmltf(GBmean[i], inputSin1);
-	  		cmlt = cmltf(GCmean[i], inputCos1);
-	  		dmlt = cmltf(GDmean[i], inputSin1);
+	  		cmlt = cmltf(GCmean[i], inputCos2);
+	  		dmlt = cmltf(GDmean[i], inputSin2);
 	  		
 	  		sumTot = caddf(sumTot, amlt);
 	  		sumTot = caddf(sumTot, bmlt);
 	  		sumTot = caddf(sumTot, cmlt);
 	  		sumTot = caddf(sumTot, dmlt);
-	  	}
+	  
+	  	
 	  	if(sumTot.re >= maxVal)
 	  	{
 	  		maxVal = sumTot.re;
 	  		maxAngle = tmpAngle;
+	  	}
 	  	}
   	}
   	
   	/*
   	Send calculated angle with SPI
   	*/
-  
+  	
+
+  	if(maxVal > 100) 
+  	{	
 	float trans  = 255/360.0*180/pi*maxAngle;
 	spi_send((int) trans);
-  	printf("MaxAngle = %f\n", (maxAngle*180/pi));
+  	//printf("MaxVAL = %f\n", maxVal);
+  	prevAngle = maxAngle;
+  	}
+  	
   	packageCounter = 1;
   	
   	/*
   	Reset mean values after SRP algorithm 
   	*/
   	
-  	for (k = 0; i < halfN; i++)
+  	for (k = 0; k < halfN; k++)
   	{
   		GAmean[k].re = 0;
 	  	GBmean[k].re = 0;
@@ -325,10 +354,31 @@ void algorithm()
   }
 }
 
+void new_algorithm()
+{
+	interrupt(SIG_SP1,SIG_IGN);
+	sample_t *u32 = dsp_get_audio_01();
+	sample_t *u33 = dsp_get_audio_23();
+	int i;
+	for (i = 0; i < N; i++)
+	{
+		x1[i] = u32[i].left;
+		x2[i] = u32[i].right;
+	}	
+	
+	rfft256(x1,X1);
+	rfft256(x2,X2);
+	
+	complex_float val = cmltf(X1[16], conjf(X2[16]));
+	float angle = atan2f(val.im, val.re);
+	float trans  = 255/360.0*180/pi*angle;
+	spi_send((int) 170*255/360);
+}
+
+
 void main()
 {
-
-	dsp_init();
+ 	dsp_init();
 	dsp_start();
 	test();
 	algorithm_setup();
@@ -340,7 +390,3 @@ void main()
 	}
 	algorithm_close();
 }
-	
-
-
-
