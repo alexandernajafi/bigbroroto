@@ -8,7 +8,7 @@ sinc = @(x) sin(pi*x+1E-8)./(pi*x + 1E-8);
 
 sound(z,Fs); %%ffftw-bibliotek
 buffersize = 1024;
-y = buffer(z,buffersize);
+y = buffer(z, buffersize);
 
 %Fs = 8000;                      %Sample Frequency [Hz]
 v = 330;                        %Speed of sound [m/s]
